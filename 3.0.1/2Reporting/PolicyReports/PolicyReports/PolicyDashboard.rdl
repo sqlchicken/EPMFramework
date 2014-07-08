@@ -25,7 +25,7 @@
             <Value>=Parameters!ServerGroupName.Value</Value>
           </QueryParameter>
         </QueryParameters>
-        <CommandText>SELECT 	EvaluatedServer
+        <CommandText>SELECT EvaluatedServer
 	, EvaluationDateTime
 	, EvaluatedPolicy
 	, EvaluatedObject
@@ -149,7 +149,7 @@ ORDER BY MonthStart DESC</CommandText>
             <Value>=Parameters!ServerGroupName.Value</Value>
           </QueryParameter>
         </QueryParameters>
-        <CommandText>SELECT 	MonthYear
+        <CommandText>SELECT MonthYear
 	, DATEADD(d,-day(EvaluationDateTime)+1, CAST(EvaluationDateTime AS DATE)) AS MonthStart
 	, CASE WHEN PolicyResult IN ('Fail', 'Error') THEN 1 ELSE 0 end AS FailedPolicyCount
 FROM policy.v_PolicyHistory
