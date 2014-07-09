@@ -42,7 +42,7 @@
       <Options>
         <OutputPath>bin\Debug</OutputPath>
         <TargetServerVersion>SSRS2008R2</TargetServerVersion>
-        <TargetServerURL>http://win2012/Reportserver</TargetServerURL>
+        <TargetServerURL>http://localhost/Reportserver</TargetServerURL>
         <TargetFolder>EPM/EPM Reports</TargetFolder>
         <TargetDataSourceFolder>EPM/EPM Data Sources</TargetDataSourceFolder>
         <OverwriteDataSources>true</OverwriteDataSources>

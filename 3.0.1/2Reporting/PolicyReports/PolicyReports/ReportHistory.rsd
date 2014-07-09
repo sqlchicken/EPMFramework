@@ -34,7 +34,7 @@
 	, policy_id
 	, CategoryName
 	, MonthYear
-	, CASE WHEN PolicyResult = 'Fail' THEN 1 ELSE 0 end AS FailedPolicyCount
+	, CASE WHEN PolicyResult = 'Fail' THEN 1 ELSE 0 END AS FailedPolicyCount
 FROM policy.v_PolicyHistory_LastEvaluation
 WHERE CategoryName IN (@CategoryName)
 AND EvaluatedPolicy IN (@EvaluatedPolicy)
