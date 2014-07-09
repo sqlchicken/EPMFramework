@@ -85,7 +85,7 @@ FROM policy.v_PolicyHistory</CommandText>
           <rd:TypeName>System.String</rd:TypeName>
         </Field>
         <Field Name="TrimCategoryName">
-          <Value>=Right(Fields!CategoryName.Value, (Len(Fields!CategoryName.Value) - InStrRev(Fields!CategoryName.Value,":") - 1))</Value>
+          <Value>=IIF(Fields!CategoryName.Value LIKE "*:*", Right(Fields!CategoryName.Value, (Len(Fields!CategoryName.Value) - InStrRev(Fields!CategoryName.Value,":") - 1)), Fields!CategoryName.Value)</Value>
         </Field>
       </Fields>
     </DataSet>
@@ -130,7 +130,7 @@ ORDER BY MonthStart DESC</CommandText>
         </QueryParameters>
         <CommandText>SELECT MonthYear
 	, DATEADD(d,-day(EvaluationDateTime)+1, CAST(EvaluationDateTime AS DATE)) AS MonthStart
-	, CASE WHEN PolicyResult IN ('Fail', 'Error') THEN 1 ELSE 0 end AS FailedPolicyCount
+	, CASE WHEN PolicyResult IN ('Fail') THEN 1 ELSE 0 end AS FailedPolicyCount
 FROM policy.v_PolicyHistory
 WHERE CategoryName IN (@CategoryName)
 AND EvaluatedPolicy IN (@EvaluatedPolicy)
@@ -162,15 +162,15 @@ AND @DateMonth = '1900-01-01'))</CommandText>
       <Query>
         <DataSourceName>PolicyDW</DataSourceName>
         <QueryParameters>
-          <QueryParameter Name="@ServerGroupName">
-            <Value>=Parameters!ServerGroupName.Value</Value>
+          <QueryParameter Name="@EvaluatedPolicy">
+            <Value>=Parameters!EvaluatedPolicy.Value</Value>
+            <rd:UserDefined>true</rd:UserDefined>
           </QueryParameter>
           <QueryParameter Name="@CategoryName">
             <Value>=Parameters!CategoryName.Value</Value>
           </QueryParameter>
-          <QueryParameter Name="@EvaluatedPolicy">
-            <Value>=Parameters!EvaluatedPolicy.Value</Value>
-            <rd:UserDefined>true</rd:UserDefined>
+          <QueryParameter Name="@ServerGroupName">
+            <Value>=Parameters!ServerGroupName.Value</Value>
           </QueryParameter>
         </QueryParameters>
         <CommandText>SELECT CASE 
@@ -180,8 +180,16 @@ AND @DateMonth = '1900-01-01'))</CommandText>
 		WHERE iple.EvaluatedServer = ple.EvaluatedServer
 		AND iple.CategoryName IN (@CategoryName)
 		AND iple.EvaluatedPolicy IN (@EvaluatedPolicy)
-		AND iple.PolicyResult = 'Fail')
+		AND iple.PolicyResult = 'FAIL')
 	THEN 'Out of Compliance'
+	WHEN EXISTS 
+		(SELECT * 
+		FROM policy.v_PolicyHistory_LastEvaluation iple 
+		WHERE iple.EvaluatedServer = ple.EvaluatedServer
+		AND iple.CategoryName IN (@CategoryName)
+		AND iple.EvaluatedPolicy IN (@EvaluatedPolicy)
+		AND iple.PolicyResult = 'ERROR')
+	THEN 'Unkown'
 	ELSE 'In Compliance' 
 	END AS InstanceStatus
 	, EvaluatedServer
@@ -733,8 +741,8 @@ Sum(IIF(Fields!PolicyResult.Value="FAIL", 1, 0))/COUNT(Fields!PolicyResult.Value
                                 <Value />
                               </TopImage>
                               <AspectRatio>NaN</AspectRatio>
-                              <Height>100</Height>
-                              <Width>50</Width>
+                              <Height>50</Height>
+                              <Width>100</Width>
                             </LinearGauge>
                           </LinearGauges>
                           <StateIndicators>
@@ -838,10 +846,10 @@ Sum(IIF(Fields!PolicyResult.Value="FAIL", 1, 0))/COUNT(Fields!PolicyResult.Value
                               <Style>
                                 <ShadowOffset>2pt</ShadowOffset>
                               </Style>
-                              <Top>4</Top>
-                              <Left>54</Left>
-                              <Height>92</Height>
-                              <Width>42</Width>
+                              <Top>54</Top>
+                              <Left>4</Left>
+                              <Height>42</Height>
+                              <Width>92</Width>
                             </StateIndicator>
                           </StateIndicators>
                           <AutoLayout>true</AutoLayout>
@@ -900,7 +908,9 @@ Sum(IIF(Fields!PolicyResult.Value="FAIL", 1, 0))/COUNT(Fields!PolicyResult.Value
                                   </Style>
                                 </TextRun>
                               </TextRuns>
-                              <Style />
+                              <Style>
+                                <TextAlign>Center</TextAlign>
+                              </Style>
                             </Paragraph>
                           </Paragraphs>
                           <Style>
@@ -1226,8 +1236,8 @@ Sum(IIF(Fields!PolicyResult.Value="FAIL", 1, 0))/COUNT(Fields!PolicyResult.Value
                                 <Value />
                               </TopImage>
                               <AspectRatio>NaN</AspectRatio>
-                              <Height>100</Height>
-                              <Width>50</Width>
+                              <Height>50</Height>
+                              <Width>100</Width>
                             </LinearGauge>
                           </LinearGauges>
                           <StateIndicators>
@@ -1331,10 +1341,10 @@ Sum(IIF(Fields!PolicyResult.Value="FAIL", 1, 0))/COUNT(Fields!PolicyResult.Value
                               <Style>
                                 <ShadowOffset>2pt</ShadowOffset>
                               </Style>
-                              <Top>4</Top>
-                              <Left>54</Left>
-                              <Height>92</Height>
-                              <Width>42</Width>
+                              <Top>54</Top>
+                              <Left>4</Left>
+                              <Height>42</Height>
+                              <Width>92</Width>
                             </StateIndicator>
                           </StateIndicators>
                           <AutoLayout>true</AutoLayout>
@@ -1395,7 +1405,9 @@ Fields!PolicyResult.Value= "PASS", 0))</Value>
                                   </Style>
                                 </TextRun>
                               </TextRuns>
-                              <Style />
+                              <Style>
+                                <TextAlign>Center</TextAlign>
+                              </Style>
                             </Paragraph>
                           </Paragraphs>
                           <Style>
@@ -1548,7 +1560,9 @@ Fields!PolicyResult.Value = "PASS", "Black")</Color>
                                   </Style>
                                 </TextRun>
                               </TextRuns>
-                              <Style />
+                              <Style>
+                                <TextAlign>Center</TextAlign>
+                              </Style>
                             </Paragraph>
                           </Paragraphs>
                           <rd:DefaultName>EvaluationDateTime</rd:DefaultName>
@@ -2791,7 +2805,7 @@ Sum(Fields!FailedPolicyCount.Value, "ReportHistory")/Count(Fields!PolicyResult.V
                         </Actions>
                       </ActionInfo>
                       <Style>
-                        <Color>=Switch(Fields!InstanceStatus.Value="In Compliance", "Green", Fields!InstanceStatus.Value="Out of Compliance", "Red")</Color>
+                        <Color>=Switch(Fields!InstanceStatus.Value="In Compliance", "Green", Fields!InstanceStatus.Value="Out of Compliance", "Red", Fields!InstanceStatus.Value="Unknown", "DimGray")</Color>
                       </Style>
                       <ChartMarker>
                         <Style />
