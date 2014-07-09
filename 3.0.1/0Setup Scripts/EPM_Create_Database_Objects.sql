@@ -453,7 +453,7 @@ SELECT @sqlcmd = ';WITH XMLNAMESPACES (''http://schemas.microsoft.com/sqlserver/
 	, PH.EvaluationDateTime
 	, PH.EvaluatedPolicy
 	, Res.Expr.value(''(../DMF:TargetQueryExpression)[1]'', ''nvarchar(150)'') AS EvaluatedObject
-	, (CASE WHEN Res.Expr.value(''(../DMF:Result)[1]'', ''nvarchar(150)'')= ''FALSE'' AND Expr.value(''(../DMF:Exception)[1]'', ''nvarchar(max)'') = ''''
+	, (CASE WHEN Res.Expr.value(''(../DMF:Result)[1]'', ''nvarchar(150)'') = ''FALSE'' AND Expr.value(''(../DMF:Exception)[1]'', ''nvarchar(max)'') = ''''
 	THEN ''FAIL''
 	WHEN Res.Expr.value(''(../DMF:Result)[1]'', ''nvarchar(150)'')= ''FALSE'' AND Expr.value(''(../DMF:Exception)[1]'', ''nvarchar(max)'') <> ''''
 						   THEN ''ERROR''
