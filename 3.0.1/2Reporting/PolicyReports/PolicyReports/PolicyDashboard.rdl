@@ -189,7 +189,7 @@ AND @DateMonth = '1900-01-01'))</CommandText>
 		AND iple.CategoryName IN (@CategoryName)
 		AND iple.EvaluatedPolicy IN (@EvaluatedPolicy)
 		AND iple.PolicyResult = 'ERROR')
-	THEN 'Unkown'
+	THEN 'Unknown'
 	ELSE 'In Compliance' 
 	END AS InstanceStatus
 	, EvaluatedServer
