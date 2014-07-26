@@ -212,20 +212,36 @@ GO
 CREATE STATISTICS [Stat_Covered] ON [policy].[PolicyHistoryDetail] ([EvaluatedPolicy], [EvaluatedServer], [EvaluationDateTime], [PolicyResult], [PolicyHistoryID], [CategoryName])
 GO
 
-CREATE STATISTICS Stat_1 ON [policy].[PolicyHistoryDetail]([CategoryName], [PolicyResult])
-go
+IF EXISTS(SELECT * FROM sys.stats WHERE object_id = OBJECT_ID(N'[policy].[PolicyHistoryDetail]') AND name = 'Stat_Policy_Result' )
+DROP STATISTICS policy.[PolicyHistoryDetail].[Stat_Policy_Result]
+GO
+CREATE STATISTICS Stat_Policy_Result ON [policy].[PolicyHistoryDetail]([CategoryName], [PolicyResult])
+GO
 
-CREATE STATISTICS Stat_2 ON [policy].[PolicyHistoryDetail]([EvaluatedServer], [PolicyHistoryDetailID], [EvaluatedPolicy])
-go
+IF EXISTS(SELECT * FROM sys.stats WHERE object_id = OBJECT_ID(N'[policy].[PolicyHistoryDetail]') AND name = 'Stat_Server_Detail_Policy' )
+DROP STATISTICS policy.[PolicyHistoryDetail].[Stat_Server_Detail_Policy]
+GO
+CREATE STATISTICS Stat_Server_Detail_Policy ON [policy].[PolicyHistoryDetail]([EvaluatedServer], [PolicyHistoryDetailID], [EvaluatedPolicy])
+GO
 
-CREATE STATISTICS Stat_3 ON [policy].[PolicyHistoryDetail]([EvaluatedPolicy], [CategoryName], [PolicyResult], [EvaluationDateTime])
-go
+IF EXISTS(SELECT * FROM sys.stats WHERE object_id = OBJECT_ID(N'[policy].[PolicyHistoryDetail]') AND name = 'Stat_Policy_Category_Result_Eval' )
+DROP STATISTICS policy.[PolicyHistoryDetail].[Stat_Policy_Category_Result_Eval]
+GO
+CREATE STATISTICS Stat_Policy_Category_Result_Eval ON [policy].[PolicyHistoryDetail]([EvaluatedPolicy], [CategoryName], [PolicyResult], [EvaluationDateTime])
+GO
 
-CREATE STATISTICS Stat_4 ON [policy].[PolicyHistoryDetail]([EvaluatedPolicy], [EvaluatedServer], [PolicyHistoryDetailID], [CategoryName], [PolicyResult])
-go
 
-CREATE STATISTICS Stat_5 ON [policy].[PolicyHistoryDetail]([EvaluatedServer], [CategoryName], [PolicyResult], [EvaluatedPolicy], [EvaluationDateTime], [PolicyHistoryDetailID])
-go
+IF EXISTS(SELECT * FROM sys.stats WHERE object_id = OBJECT_ID(N'[policy].[PolicyHistoryDetail]') AND name = 'Stat_Policy_Server_Detail_Category_Result' )
+DROP STATISTICS policy.[PolicyHistoryDetail].[Stat_Policy_Server_Detail_Category_Result]
+GO
+CREATE STATISTICS Stat_Policy_Server_Detail_Category_Result ON [policy].[PolicyHistoryDetail]([EvaluatedPolicy], [EvaluatedServer], [PolicyHistoryDetailID], [CategoryName], [PolicyResult])
+GO
+
+IF EXISTS(SELECT * FROM sys.stats WHERE object_id = OBJECT_ID(N'[policy].[PolicyHistoryDetail]') AND name = 'Stat_Server_Category_Result_Policy_Eval_Detail' )
+DROP STATISTICS policy.[PolicyHistoryDetail].[Stat_Server_Category_Result_Policy_Eval_Detail]
+GO
+CREATE STATISTICS Stat_Server_Category_Result_Policy_Eval_Detail ON [policy].[PolicyHistoryDetail]([EvaluatedServer], [CategoryName], [PolicyResult], [EvaluatedPolicy], [EvaluationDateTime], [PolicyHistoryDetailID])
+GO
 
 
 --Create the function to support server selection.
@@ -237,6 +253,25 @@ USE $(ManagementDatabase)
 GO
 IF EXISTS(SELECT * FROM sys.objects WHERE name = 'pfn_ServerGroupInstances' AND type = 'TF')
 	DROP FUNCTION policy.pfn_ServerGroupInstances
+GO
+CREATE FUNCTION [policy].[pfn_ServerGroupInstances] (@server_group_name NVARCHAR(128))
+RETURNS TABLE
+AS
+RETURN(WITH ServerGroups(parent_id, server_group_id, name) AS 
+		(
+			SELECT parent_id, server_group_id, name 
+			FROM msdb.dbo.sysmanagement_shared_server_groups tg
+			WHERE is_system_object = 0
+				AND (tg.name = @server_group_name OR @server_group_name = '')	
+			UNION ALL
+			SELECT cg.parent_id, cg.server_group_id, cg.name 
+			FROM msdb.dbo.sysmanagement_shared_server_groups cg
+			INNER JOIN ServerGroups pg ON cg.parent_id = pg.server_group_id
+		)
+		SELECT s.server_name, sg.name AS GroupName
+		FROM [msdb].[dbo].[sysmanagement_shared_registered_servers_internal] s
+		INNER JOIN ServerGroups SG ON s.server_group_id = sg.server_group_id
+)
 GO
 /*
 CREATE FUNCTION policy.pfn_ServerGroupInstances (@server_group_name NVARCHAR(128))
@@ -271,25 +306,6 @@ IF @server_group_name = ''
 END
 GO
 */
-CREATE FUNCTION [policy].[pfn_ServerGroupInstances] (@server_group_name NVARCHAR(128))
-RETURNS TABLE
-AS
-RETURN(WITH ServerGroups(parent_id, server_group_id, name) AS 
-		(
-			SELECT parent_id, server_group_id, name 
-			FROM msdb.dbo.sysmanagement_shared_server_groups tg
-			WHERE is_system_object = 0
-				AND (tg.name = @server_group_name OR @server_group_name = '')	
-			UNION ALL
-			SELECT cg.parent_id, cg.server_group_id, cg.name 
-			FROM msdb.dbo.sysmanagement_shared_server_groups cg
-			INNER JOIN ServerGroups pg ON cg.parent_id = pg.server_group_id
-		)
-		SELECT s.server_name, sg.name AS GroupName
-		FROM [msdb].[dbo].[sysmanagement_shared_registered_servers_internal] s
-		INNER JOIN ServerGroups SG ON s.server_group_id = sg.server_group_id
-)
-GO
 
 --Create the views which are used in the policy reports
 
