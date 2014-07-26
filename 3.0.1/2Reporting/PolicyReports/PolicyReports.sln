@@ -1,7 +1,7 @@
 ﻿
-Microsoft Visual Studio Solution File, Format Version 11.00
-# Visual Studio 2010
-Project("{F14B399A-7131-4C87-9E4B-1186C45EF12D}") = "PolicyReports", "PolicyReports\PolicyReports.rptproj", "{30FA2CD3-F4E3-4EA6-85A7-07AF4D922933}"
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 2012
+Project("{F14B399A-7131-4C87-9E4B-1186C45EF12D}") = "PolicyReports", "PolicyReports.rptproj", "{E0F65769-8BEA-4BFD-B715-44519AF1CF80}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -10,14 +10,15 @@ Global
 		Release|Default = Release|Default
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{30FA2CD3-F4E3-4EA6-85A7-07AF4D922933}.Debug|Default.ActiveCfg = Debug
-		{30FA2CD3-F4E3-4EA6-85A7-07AF4D922933}.Debug|Default.Build.0 = DebugLocal
-		{30FA2CD3-F4E3-4EA6-85A7-07AF4D922933}.Debug|Default.Deploy.0 = DebugLocal
-		{30FA2CD3-F4E3-4EA6-85A7-07AF4D922933}.DebugLocal|Default.ActiveCfg = DebugLocal
-		{30FA2CD3-F4E3-4EA6-85A7-07AF4D922933}.DebugLocal|Default.Build.0 = DebugLocal
-		{30FA2CD3-F4E3-4EA6-85A7-07AF4D922933}.Release|Default.ActiveCfg = Release
-		{30FA2CD3-F4E3-4EA6-85A7-07AF4D922933}.Release|Default.Build.0 = Release
-		{30FA2CD3-F4E3-4EA6-85A7-07AF4D922933}.Release|Default.Deploy.0 = Release
+		{E0F65769-8BEA-4BFD-B715-44519AF1CF80}.Debug|Default.ActiveCfg = Debug
+		{E0F65769-8BEA-4BFD-B715-44519AF1CF80}.Debug|Default.Build.0 = DebugLocal
+		{E0F65769-8BEA-4BFD-B715-44519AF1CF80}.Debug|Default.Deploy.0 = DebugLocal
+		{E0F65769-8BEA-4BFD-B715-44519AF1CF80}.DebugLocal|Default.ActiveCfg = DebugLocal
+		{E0F65769-8BEA-4BFD-B715-44519AF1CF80}.DebugLocal|Default.Build.0 = DebugLocal
+		{E0F65769-8BEA-4BFD-B715-44519AF1CF80}.DebugLocal|Default.Deploy.0 = DebugLocal
+		{E0F65769-8BEA-4BFD-B715-44519AF1CF80}.Release|Default.ActiveCfg = Release
+		{E0F65769-8BEA-4BFD-B715-44519AF1CF80}.Release|Default.Build.0 = Release
+		{E0F65769-8BEA-4BFD-B715-44519AF1CF80}.Release|Default.Deploy.0 = Release
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

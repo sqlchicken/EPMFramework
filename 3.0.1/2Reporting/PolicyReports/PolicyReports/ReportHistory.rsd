@@ -13,13 +13,15 @@
         </DataSetParameter>
         <DataSetParameter Name="@CategoryName">
           <ReadOnly>false</ReadOnly>
-          <Nullable>true</Nullable>
+          <Nullable>false</Nullable>
           <OmitFromQuery>false</OmitFromQuery>
+          <rd:DbType>Object</rd:DbType>
         </DataSetParameter>
         <DataSetParameter Name="@ServerGroupName">
           <ReadOnly>false</ReadOnly>
-          <Nullable>true</Nullable>
+          <Nullable>false</Nullable>
           <OmitFromQuery>false</OmitFromQuery>
+          <rd:DbType>Object</rd:DbType>
         </DataSetParameter>
       </DataSetParameters>
       <CommandText>SELECT EvaluatedServer
@@ -41,6 +43,10 @@ AND EvaluatedPolicy IN (@EvaluatedPolicy)
 AND (EvaluatedServer IN (SELECT server_name
 		FROM policy.pfn_ServerGroupInstances(@ServerGroupName))
 OR @ServerGroupName = '')
+AND EvaluatedPolicy NOT IN (SELECT spp.name 
+		FROM msdb..syspolicy_policies spp 
+		INNER JOIN msdb..syspolicy_policy_categories spc ON spp.policy_category_id = spc.policy_category_id
+		WHERE spc.name = 'Disabled')
 ORDER BY PolicyResult, EvaluatedServer</CommandText>
       <rd:UseGenericDesigner>true</rd:UseGenericDesigner>
     </Query>
@@ -48,6 +54,9 @@ ORDER BY PolicyResult, EvaluatedServer</CommandText>
       <Field Name="EvaluatedServer">
         <DataField>EvaluatedServer</DataField>
         <rd:TypeName>System.String</rd:TypeName>
+      </Field>
+      <Field Name="TrimCategoryName">
+        <Value>=IIF(Fields!CategoryName.Value LIKE "*:*", Right(Fields!CategoryName.Value, (Len(Fields!CategoryName.Value) - InStrRev(Fields!CategoryName.Value,":") - 1)), Fields!CategoryName.Value)</Value>
       </Field>
       <Field Name="EvaluationDateTime">
         <DataField>EvaluationDateTime</DataField>
@@ -84,9 +93,6 @@ ORDER BY PolicyResult, EvaluatedServer</CommandText>
       <Field Name="FailedPolicyCount">
         <DataField>FailedPolicyCount</DataField>
         <rd:TypeName>System.Int32</rd:TypeName>
-      </Field>
-      <Field Name="TrimCategoryName">
-        <Value>=Right(Fields!CategoryName.Value, (Len(Fields!CategoryName.Value) - InStrRev(Fields!CategoryName.Value,":") - 1))</Value>
       </Field>
     </Fields>
   </DataSet>
