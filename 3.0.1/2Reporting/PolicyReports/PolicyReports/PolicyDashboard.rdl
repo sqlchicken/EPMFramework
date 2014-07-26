@@ -2371,6 +2371,7 @@ Sum(Fields!FailedPolicyCount.Value, "ReportHistory")/Count(Fields!PolicyResult.V
                   <ChartDataPoints>
                     <ChartDataPoint>
                       <ChartDataPointValues>
+                        <X>=Fields!TrimCategoryName.Value</X>
                         <Y>=IIF(IsNothing(Fields!PolicyResult.Value), Nothing, Count(Fields!PolicyResult.Value))</Y>
                       </ChartDataPointValues>
                       <ChartDataLabel>

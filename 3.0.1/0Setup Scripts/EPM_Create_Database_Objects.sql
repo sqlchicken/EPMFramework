@@ -157,6 +157,12 @@ GO
 CREATE INDEX [IX_PolicyHistoryView] ON [policy].[PolicyHistoryDetail] ([EvaluatedPolicy] ASC, [EvaluatedServer] ASC, [EvaluatedObject] ASC, [EvaluationDateTime] DESC, [PolicyResult] ASC, [policy_id] ASC, CategoryName, MonthYear)
 GO
 
+IF EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[policy].[PolicyHistoryDetail]') AND name = N'IX_PolicyHistoryView_2')
+DROP INDEX IX_PolicyHistoryView_2 ON policy.PolicyHistoryDetail
+GO
+CREATE INDEX [IX_PolicyHistoryView_2] ON [policy].[PolicyHistoryDetail] ([EvaluatedPolicy] ASC ,[EvaluatedServer] ASC ,[EvaluationDateTime] ASC)
+GO
+
 IF EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[policy].[PolicyHistoryDetail]') AND name = N'IX_EvaluatedServer')
 DROP INDEX IX_EvaluatedServer ON policy.PolicyHistoryDetail
 GO
@@ -206,6 +212,22 @@ GO
 CREATE STATISTICS [Stat_Covered] ON [policy].[PolicyHistoryDetail] ([EvaluatedPolicy], [EvaluatedServer], [EvaluationDateTime], [PolicyResult], [PolicyHistoryID], [CategoryName])
 GO
 
+CREATE STATISTICS Stat_1 ON [policy].[PolicyHistoryDetail]([CategoryName], [PolicyResult])
+go
+
+CREATE STATISTICS Stat_2 ON [policy].[PolicyHistoryDetail]([EvaluatedServer], [PolicyHistoryDetailID], [EvaluatedPolicy])
+go
+
+CREATE STATISTICS Stat_3 ON [policy].[PolicyHistoryDetail]([EvaluatedPolicy], [CategoryName], [PolicyResult], [EvaluationDateTime])
+go
+
+CREATE STATISTICS Stat_4 ON [policy].[PolicyHistoryDetail]([EvaluatedPolicy], [EvaluatedServer], [PolicyHistoryDetailID], [CategoryName], [PolicyResult])
+go
+
+CREATE STATISTICS Stat_5 ON [policy].[PolicyHistoryDetail]([EvaluatedServer], [CategoryName], [PolicyResult], [EvaluatedPolicy], [EvaluationDateTime], [PolicyHistoryDetailID])
+go
+
+
 --Create the function to support server selection.
 --The following function will support nested CMS folders for the EPM Framework.
 --The function must be created in a database ON the CMS server. 
@@ -216,6 +238,7 @@ GO
 IF EXISTS(SELECT * FROM sys.objects WHERE name = 'pfn_ServerGroupInstances' AND type = 'TF')
 	DROP FUNCTION policy.pfn_ServerGroupInstances
 GO
+/*
 CREATE FUNCTION policy.pfn_ServerGroupInstances (@server_group_name NVARCHAR(128))
 RETURNS @ServerGroups TABLE (server_name nvarchar(128), GroupName nvarchar(128))
 AS
@@ -246,6 +269,26 @@ IF @server_group_name = ''
 		INNER JOIN ServerGroups SG ON s.server_group_id = sg.server_group_id
 		RETURN
 END
+GO
+*/
+CREATE FUNCTION [policy].[pfn_ServerGroupInstances] (@server_group_name NVARCHAR(128))
+RETURNS TABLE
+AS
+RETURN(WITH ServerGroups(parent_id, server_group_id, name) AS 
+		(
+			SELECT parent_id, server_group_id, name 
+			FROM msdb.dbo.sysmanagement_shared_server_groups tg
+			WHERE is_system_object = 0
+				AND (tg.name = @server_group_name OR @server_group_name = '')	
+			UNION ALL
+			SELECT cg.parent_id, cg.server_group_id, cg.name 
+			FROM msdb.dbo.sysmanagement_shared_server_groups cg
+			INNER JOIN ServerGroups pg ON cg.parent_id = pg.server_group_id
+		)
+		SELECT s.server_name, sg.name AS GroupName
+		FROM [msdb].[dbo].[sysmanagement_shared_registered_servers_internal] s
+		INNER JOIN ServerGroups SG ON s.server_group_id = sg.server_group_id
+)
 GO
 
 --Create the views which are used in the policy reports
@@ -284,11 +327,11 @@ GO
 IF EXISTS (SELECT * FROM sys.views WHERE object_id = OBJECT_ID(N'[policy].[v_PolicyHistory]'))
 DROP VIEW [policy].[v_PolicyHistory]
 GO
-CREATE VIEW policy.v_PolicyHistory
+CREATE VIEW [policy].[v_PolicyHistory]
 AS
 --The policy.v_PolicyHistory view will return all results
 --and identify the policy evaluation result AS PASS, FAIL, or 
---ERROR.  The ERROR result indicates that the policy was not able
+--ERROR. The ERROR result indicates that the policy was not able
 --to evaluate against an object.
 SELECT PH.PolicyHistoryID
 	, PH.EvaluatedServer
@@ -303,7 +346,11 @@ SELECT PH.PolicyHistoryID
 	, PH.MonthYear
 FROM policy.PolicyHistoryDetail PH
 INNER JOIN msdb.dbo.syspolicy_policies AS p ON p.name = PH.EvaluatedPolicy
-INNER JOIN msdb.dbo.syspolicy_policy_categories AS c ON p.policy_category_id = c.policy_category_id
+--INNER JOIN msdb.dbo.syspolicy_policy_categories AS c ON p.policy_category_id = c.policy_category_id
+AND PH.EvaluatedPolicy NOT IN (SELECT spp.name 
+		FROM msdb.dbo.syspolicy_policies spp 
+		INNER JOIN msdb.dbo.syspolicy_policy_categories spc ON spp.policy_category_id = spc.policy_category_id
+		WHERE spc.name = 'Disabled')
 GO
 
 
