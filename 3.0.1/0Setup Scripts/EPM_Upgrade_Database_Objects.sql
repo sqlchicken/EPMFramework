@@ -1,6 +1,5 @@
 /*
-SQLCMD script to generate the required objects to support a centralized Policy-Based Management solution.
-This is the first script to run.
+SQLCMD script to upgrade changed objects from previous deployment of a centralized Policy-Based Management solution.
 Set the variables to define the server and database which stores the policy results.
 */
 :SETVAR ServerName "WIN2012"
@@ -9,119 +8,17 @@ GO
 :CONNECT $(ServerName)
 GO
 
---Create the specified database if it does not exist
-IF NOT EXISTS(SELECT * FROM sys.databases WHERE name = '$(ManagementDatabase)')
-CREATE DATABASE $(ManagementDatabase)
-GO
-
---Create a schema to support the EPM framework objects.
-USE $(ManagementDatabase)
-GO
-IF NOT EXISTS (SELECT * FROM sys.schemas WHERE name = N'policy')
-EXEC sys.sp_executesql N'CREATE SCHEMA [policy] AUTHORIZATION [dbo]'
-
---Start create tables and indexes
-
---Create the table to store the results from the PowerShell evaluation.
-IF NOT EXISTS(SELECT * FROM sys.objects WHERE type = N'U' AND name = N'PolicyHistory')
-BEGIN 
-	CREATE TABLE [policy].[PolicyHistory](
-		[PolicyHistoryID] [int] IDENTITY NOT NULL ,
-		[EvaluatedServer] [nvarchar](50) NULL,
-		[EvaluationDateTime] [datetime] NULL,
-		[EvaluatedPolicy] [nvarchar](128) NULL,
-		[EvaluationResults] [xml] NOT NULL,
-		CONSTRAINT PK_PolicyHistory PRIMARY KEY CLUSTERED (PolicyHistoryID)
-	)
-	
-	ALTER TABLE [policy].[PolicyHistory] ADD CONSTRAINT [DF_PolicyHistory_EvaluationDateTime]  DEFAULT (GETDATE()) FOR [EvaluationDateTime]
-END
-GO
-IF EXISTS(SELECT * FROM sys.columns WHERE object_id = object_id('policy.policyhistory')	AND name = 'PolicyResult')
-	BEGIN 
-		ALTER TABLE policy.PolicyHistory
-		DROP COLUMN PolicyResult
-	END
-GO
-IF EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[policy].[PolicyHistory]') AND name = N'IX_EvaluationResults')
-DROP INDEX IX_EvaluationResults ON policy.PolicyHistory
-GO
-CREATE PRIMARY XML INDEX IX_EvaluationResults ON policy.PolicyHistory (EvaluationResults)
-GO
-
-CREATE XML INDEX IX_EvaluationResults_PROPERTY ON policy.PolicyHistory (EvaluationResults)
-USING XML INDEX IX_EvaluationResults
-FOR PROPERTY  
-GO
-
-IF EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[policy].[PolicyHistory]') AND name = N'IX_EvaluatedPolicy')
-DROP INDEX IX_EvaluatedPolicy ON policy.PolicyHistory
-GO
-CREATE INDEX IX_EvaluatedPolicy ON policy.PolicyHistory(EvaluatedPolicy)
-GO
-
-IF EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[policy].[PolicyHistory]') AND name = N'IX_EvaluatedServer')
-DROP INDEX IX_EvaluatedServer ON policy.PolicyHistory
-GO
-CREATE INDEX IX_EvaluatedServer ON [policy].[PolicyHistory] ([EvaluatedServer])
-INCLUDE ([PolicyHistoryID],[EvaluationDateTime],[EvaluatedPolicy])
-GO
-
+--Start create indexes
 IF EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[policy].[PolicyHistory]') AND name = N'IX_EvaluationDateTime')
 DROP INDEX IX_EvaluationDateTime ON policy.PolicyHistory
 GO
 CREATE INDEX IX_EvaluationDateTime ON policy.PolicyHistory(EvaluationDateTime)
 GO
 
---Create the table to store the error information from the failed PowerShell executions.
-IF NOT EXISTS (SELECT * FROM sys.objects WHERE type = N'U' AND name = N'EvaluationErrorHistory')
-BEGIN 
-	CREATE TABLE [policy].[EvaluationErrorHistory](
-		[ErrorHistoryID] [int] IDENTITY(1,1) NOT NULL,
-		[EvaluatedServer] [nvarchar](50) NULL,
-		[EvaluationDateTime] [datetime] NULL,
-		[EvaluatedPolicy] [nvarchar](128) NULL,
-		[EvaluationResults] [nvarchar](max) NOT NULL,
-		CONSTRAINT PK_EvaluationErrorHistory PRIMARY KEY CLUSTERED ([ErrorHistoryID] ASC)
-	)
-
-	ALTER TABLE [policy].[EvaluationErrorHistory] ADD  CONSTRAINT [DF_EvaluationErrorHistory_EvaluationDateTime]  DEFAULT (getdate()) FOR [EvaluationDateTime]
-END
-
-IF EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[policy].[EvaluationErrorHistory]') AND name = N'IX_EvaluationErrorHistoryView')
-DROP INDEX IX_EvaluationErrorHistoryView ON policy.EvaluationErrorHistory
-GO
-CREATE INDEX [IX_EvaluationErrorHistoryView] ON policy.EvaluationErrorHistory ([EvaluatedPolicy] ASC, [EvaluatedServer] ASC, [EvaluationDateTime] DESC)
-GO
-
 IF EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[policy].[EvaluationErrorHistory]') AND name = N'IX_EvaluationErrorHistoryPurge')
 DROP INDEX IX_EvaluationErrorHistoryView ON policy.EvaluationErrorHistory
 GO
 CREATE INDEX [IX_EvaluationErrorHistoryPurge] ON policy.EvaluationErrorHistory ([EvaluationDateTime])
-GO
-
-
---Create the table to store the policy result details.
---This table is loaded with the procedure policy.epm_LoadPolicyHistoryDetail or through the SQL Server SSIS policy package.
-IF NOT EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[policy].[PolicyHistoryDetail]') AND type in (N'U'))
-BEGIN
-	CREATE TABLE [policy].[PolicyHistoryDetail](
-		[PolicyHistoryDetailID] [int] IDENTITY NOT NULL,
-		[PolicyHistoryID] [int] NULL,
-		[EvaluatedServer] [nvarchar](128) NULL,
-		[EvaluationDateTime] [datetime] NULL,
-		[MonthYear] [nvarchar](14) NULL,
-		[EvaluatedPolicy] [nvarchar](128) NULL,
-		[policy_id] [int] NULL,
-		[CategoryName] [nvarchar](128) NULL,
-		[EvaluatedObject] [nvarchar](256) NULL,
-		[PolicyResult] [nvarchar](5) NOT NULL,
-		[ExceptionMessage] [nvarchar](max) NULL,
-		[ResultDetail] [xml] NULL,
-		[PolicyHistorySource] [nvarchar](50) NOT NULL,
-		CONSTRAINT PK_PolicyHistoryDetail PRIMARY KEY CLUSTERED	([PolicyHistoryDetailID])
-	)
-END
 GO
 
 ALTER TABLE policy.PolicyHistoryDetail ADD CONSTRAINT
@@ -137,73 +34,11 @@ DROP INDEX FK_PolicyHistoryID ON policy.PolicyHistoryDetail
 GO
 CREATE INDEX FK_PolicyHistoryID ON [policy].[PolicyHistoryDetail] (PolicyHistoryID)
 GO
-
-IF EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[policy].[PolicyHistoryDetail]') AND name = N'IX_EvaluatedPolicy')
-DROP INDEX IX_EvaluatedPolicy ON policy.PolicyHistoryDetail
-GO
-CREATE INDEX IX_EvaluatedPolicy ON [policy].[PolicyHistoryDetail] ([EvaluatedPolicy]) 
-INCLUDE ([PolicyHistoryID], [EvaluatedServer], [EvaluationDateTime], [MonthYear], [policy_id], [CategoryName], [EvaluatedObject], [PolicyResult])
-GO
-
-IF EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[policy].[PolicyHistoryDetail]') AND name = N'IX_PolicyHistoryView')
-DROP INDEX IX_PolicyHistoryView ON policy.PolicyHistoryDetail
-GO
-CREATE INDEX [IX_PolicyHistoryView] ON [policy].[PolicyHistoryDetail] ([EvaluatedPolicy] ASC, [EvaluatedServer] ASC, [EvaluatedObject] ASC, [EvaluationDateTime] DESC, [PolicyResult] ASC, [policy_id] ASC, CategoryName, MonthYear)
-GO
-
+	
 IF EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[policy].[PolicyHistoryDetail]') AND name = N'IX_PolicyHistoryView_2')
 DROP INDEX IX_PolicyHistoryView_2 ON policy.PolicyHistoryDetail
 GO
 CREATE INDEX [IX_PolicyHistoryView_2] ON [policy].[PolicyHistoryDetail] ([EvaluatedPolicy] ASC ,[EvaluatedServer] ASC ,[EvaluationDateTime] ASC)
-GO
-
-IF EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[policy].[PolicyHistoryDetail]') AND name = N'IX_EvaluatedServer')
-DROP INDEX IX_EvaluatedServer ON policy.PolicyHistoryDetail
-GO
-CREATE NONCLUSTERED INDEX [IX_EvaluatedServer] ON [policy].[PolicyHistoryDetail] ([EvaluatedServer] ASC, [EvaluatedPolicy] ASC, [EvaluatedObject] ASC, [EvaluationDateTime] ASC)
-INCLUDE ([PolicyResult])
-GO
-
-IF EXISTS(SELECT * FROM sys.stats WHERE object_id = OBJECT_ID(N'[policy].[PolicyHistoryDetail]') AND name = 'Stat_EvaluatedServer' )
-DROP STATISTICS policy.[PolicyHistoryDetail].[Stat_EvaluatedServer]
-GO
-CREATE STATISTICS [Stat_EvaluatedServer] ON [policy].[PolicyHistoryDetail] ([EvaluatedServer], [EvaluationDateTime])
-GO
-
-IF EXISTS(SELECT * FROM sys.stats WHERE object_id = OBJECT_ID(N'[policy].[PolicyHistoryDetail]') AND name = 'Stat_EvaluatedPolicy' )
-DROP STATISTICS policy.[PolicyHistoryDetail].[Stat_EvaluatedPolicy]
-GO
-CREATE STATISTICS [Stat_EvaluatedPolicy] ON [policy].[PolicyHistoryDetail] ([EvaluatedPolicy], [CategoryName])
-GO
-
-IF EXISTS(SELECT * FROM sys.stats WHERE object_id = OBJECT_ID(N'[policy].[PolicyHistoryDetail]') AND name = 'Stat_CategoryName') 
-DROP STATISTICS policy.[PolicyHistoryDetail].[Stat_CategoryName]
-GO
-CREATE STATISTICS [Stat_CategoryName] ON [policy].[PolicyHistoryDetail] ([CategoryName], [EvaluatedServer])
-GO
-
-IF EXISTS(SELECT * FROM sys.stats WHERE object_id = OBJECT_ID(N'[policy].[PolicyHistoryDetail]') AND name = 'Stat_PolicyResult' )
-DROP STATISTICS policy.[PolicyHistoryDetail].[Stat_PolicyResult]
-GO
-CREATE STATISTICS [Stat_PolicyResult] ON [policy].[PolicyHistoryDetail] ([PolicyResult], [EvaluatedServer])
-GO
-
-IF EXISTS(SELECT * FROM sys.stats WHERE object_id = OBJECT_ID(N'[policy].[PolicyHistoryDetail]') AND name = 'Stat_Policy_Server_Category' )
-DROP STATISTICS policy.[PolicyHistoryDetail].[Stat_Policy_Server_Category]
-GO
-CREATE STATISTICS [Stat_Policy_Server_Category] ON [policy].[PolicyHistoryDetail] ([EvaluatedPolicy], [EvaluatedServer], [CategoryName])
-GO
-
-IF EXISTS(SELECT * FROM sys.stats WHERE object_id = OBJECT_ID(N'[policy].[PolicyHistoryDetail]') AND name = 'Stat_Policy_Result_Server')
-DROP STATISTICS policy.[PolicyHistoryDetail].[Stat_Policy_Result_Server]
-GO
-CREATE STATISTICS [Stat_Policy_Result_Server] ON [policy].[PolicyHistoryDetail] ([EvaluatedPolicy], [PolicyResult], [EvaluatedServer])
-GO
-
-IF EXISTS(SELECT * FROM sys.stats WHERE object_id = OBJECT_ID(N'[policy].[PolicyHistoryDetail]') AND name = 'Stat_Covered' )
-DROP STATISTICS policy.[PolicyHistoryDetail].[Stat_Covered]
-GO
-CREATE STATISTICS [Stat_Covered] ON [policy].[PolicyHistoryDetail] ([EvaluatedPolicy], [EvaluatedServer], [EvaluationDateTime], [PolicyResult], [PolicyHistoryID], [CategoryName])
 GO
 
 IF EXISTS(SELECT * FROM sys.stats WHERE object_id = OBJECT_ID(N'[policy].[PolicyHistoryDetail]') AND name = 'Stat_Policy_Result' )
@@ -224,7 +59,6 @@ GO
 CREATE STATISTICS Stat_Policy_Category_Result_Eval ON [policy].[PolicyHistoryDetail]([EvaluatedPolicy], [CategoryName], [PolicyResult], [EvaluationDateTime])
 GO
 
-
 IF EXISTS(SELECT * FROM sys.stats WHERE object_id = OBJECT_ID(N'[policy].[PolicyHistoryDetail]') AND name = 'Stat_Policy_Server_Detail_Category_Result' )
 DROP STATISTICS policy.[PolicyHistoryDetail].[Stat_Policy_Server_Detail_Category_Result]
 GO
@@ -237,8 +71,7 @@ GO
 CREATE STATISTICS Stat_Server_Category_Result_Policy_Eval_Detail ON [policy].[PolicyHistoryDetail]([EvaluatedServer], [CategoryName], [PolicyResult], [EvaluatedPolicy], [EvaluationDateTime], [PolicyHistoryDetailID])
 GO
 
-
---Create the function to support server selection.
+--Update the function to support server selection.
 --The following function will support nested CMS folders for the EPM Framework.
 --The function must be created in a database ON the CMS server. 
 --This database will also store the policy history. 
@@ -267,44 +100,10 @@ RETURN(WITH ServerGroups(parent_id, server_group_id, name) AS
 		INNER JOIN ServerGroups SG ON s.server_group_id = sg.server_group_id
 )
 GO
-/*
-CREATE FUNCTION policy.pfn_ServerGroupInstances (@server_group_name NVARCHAR(128))
-RETURNS @ServerGroups TABLE (server_name nvarchar(128), GroupName nvarchar(128))
-AS
-BEGIN
-IF @server_group_name = ''
-	BEGIN
-		INSERT @ServerGroups
-		SELECT s.server_name, ssg.name AS GroupName
-		FROM [msdb].[dbo].[sysmanagement_shared_registered_servers_internal] s
-		INNER JOIN msdb.dbo.sysmanagement_shared_server_groups ssg
-		ON s.server_group_id = ssg.server_group_id
-	END
-	ELSE
-		WITH ServerGroups(parent_id, server_group_id, name) AS 
-		(
-			SELECT parent_id, server_group_id, name 
-			FROM msdb.dbo.sysmanagement_shared_server_groups tg
-			WHERE is_system_object = 0
-				AND (tg.name = @server_group_name OR @server_group_name = '')	
-			UNION ALL
-			SELECT cg.parent_id, cg.server_group_id, cg.name 
-			FROM msdb.dbo.sysmanagement_shared_server_groups cg
-			INNER JOIN ServerGroups pg ON cg.parent_id = pg.server_group_id
-		)
-		INSERT @ServerGroups
-		SELECT s.server_name, sg.name AS GroupName
-		FROM [msdb].[dbo].[sysmanagement_shared_registered_servers_internal] s
-		INNER JOIN ServerGroups SG ON s.server_group_id = sg.server_group_id
-		RETURN
-END
-GO
-*/
 
---Create the views which are used in the policy reports
+--Update the views which are used in the policy reports
 
---Drop the view if it exists.  
-IF  EXISTS (SELECT * FROM sys.views WHERE object_id = OBJECT_ID(N'[policy].[v_ServerGroups]'))
+IF EXISTS (SELECT * FROM sys.views WHERE object_id = OBJECT_ID(N'[policy].[v_ServerGroups]'))
 DROP VIEW [policy].[v_ServerGroups]
 GO
 CREATE VIEW policy.v_ServerGroups AS 
@@ -332,8 +131,6 @@ SELECT parent_id, server_group_id, GroupName, GroupLevel, Sort, GroupValue
 FROM ServerGroups 
 GO			
 
-
---Drop the view if it exists.  
 IF EXISTS (SELECT * FROM sys.views WHERE object_id = OBJECT_ID(N'[policy].[v_PolicyHistory]'))
 DROP VIEW [policy].[v_PolicyHistory]
 GO
@@ -363,8 +160,6 @@ AND PH.EvaluatedPolicy NOT IN (SELECT spp.name
 		WHERE spc.name = 'Disabled')
 GO
 
-
---Drop the view if it exists.  
 IF EXISTS (SELECT * FROM sys.views WHERE object_id = OBJECT_ID(N'[policy].[v_PolicyHistory_Rank]'))
 DROP VIEW policy.v_PolicyHistory_Rank
 GO
@@ -387,7 +182,6 @@ SELECT PolicyHistoryID
 FROM policy.v_PolicyHistory VPH
 GO
 
---Drop the view if it exists.  
 IF EXISTS (SELECT * FROM sys.views WHERE object_id = OBJECT_ID(N'[policy].[v_PolicyHistory_LastEvaluation]'))
 DROP VIEW policy.v_PolicyHistory_LastEvaluation
 GO
@@ -457,9 +251,6 @@ FROM policy.v_PolicyHistory_LastEvaluation
 WHERE PolicyResult = 'ERROR'
 GO
 	
---Create a view to return the last error for each policy against
---an instance.
---Drop the view if it exists.  
 IF EXISTS (SELECT * FROM sys.views WHERE object_id = OBJECT_ID(N'[policy].[v_EvaluationErrorHistory_LastEvaluation]'))	
 DROP VIEW policy.v_EvaluationErrorHistory_LastEvaluation
 GO
@@ -487,8 +278,7 @@ WHERE NOT EXISTS (
 		AND PH.EvaluationDateTime > EEH.EvaluationDateTime)	
 GO
 
-
---Create the procedure epm_LoadPolicyHistoryDetail will load the details from the XML documents in PolicyHistory to the PolicyHistoryDetails table.
+--Update the procedure epm_LoadPolicyHistoryDetail will load the details from the XML documents in PolicyHistory to the PolicyHistoryDetails table.
 IF EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[policy].[epm_LoadPolicyHistoryDetail]') AND type in (N'P', N'PC'))
 DROP PROCEDURE [policy].[epm_LoadPolicyHistoryDetail]
 GO
