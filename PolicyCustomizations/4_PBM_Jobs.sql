@@ -43,7 +43,7 @@ EXEC @ReturnCode = msdb.dbo.sp_add_jobstep @job_id=@jobId, @step_name=N'Microsof
 		@retry_interval=0, 
 		@os_run_priority=0, @subsystem=N'PowerShell', 
 		@command=N'SL "$(PSPath)"
-.\EPM_EnterpriseEvaluation_3.0.1.ps1 -ConfigurationGroup "" -PolicyCategoryFilter "Microsoft Best Practices: Audit" -EvalMode "Check"', 
+.\EPM_EnterpriseEvaluation_4.ps1 -ConfigurationGroup "" -PolicyCategoryFilter "Microsoft Best Practices: Audit" -EvalMode "Check"', 
 		@database_name=N'master', 
 		@flags=0, 
 		@proxy_name=N'Proxy_Powershell'
@@ -109,7 +109,7 @@ EXEC @ReturnCode = msdb.dbo.sp_add_jobstep @job_id=@jobId, @step_name=N'Microsof
 		@retry_interval=0, 
 		@os_run_priority=0, @subsystem=N'PowerShell', 
 		@command=N'SL "$(PSPath)"
-.\EPM_EnterpriseEvaluation_3.0.1.ps1 -ConfigurationGroup "" -PolicyCategoryFilter "Microsoft Best Practices: Performance" -EvalMode "Check"', 
+.\EPM_EnterpriseEvaluation_4.ps1 -ConfigurationGroup "" -PolicyCategoryFilter "Microsoft Best Practices: Performance" -EvalMode "Check"', 
 		@database_name=N'master', 
 		@flags=0, 
 		@proxy_name=N'Proxy_Powershell'
@@ -176,7 +176,7 @@ EXEC @ReturnCode = msdb.dbo.sp_add_jobstep @job_id=@jobId, @step_name=N'Microsof
 		@retry_interval=0, 
 		@os_run_priority=0, @subsystem=N'PowerShell', 
 		@command=N'SL "$(PSPath)"
-.\EPM_EnterpriseEvaluation_3.0.1.ps1 -ConfigurationGroup "" -PolicyCategoryFilter "Microsoft Best Practices: Server Configuration" -EvalMode "Check"', 
+.\EPM_EnterpriseEvaluation_4.ps1 -ConfigurationGroup "" -PolicyCategoryFilter "Microsoft Best Practices: Server Configuration" -EvalMode "Check"', 
 		@database_name=N'master', 
 		@flags=0, 
 		@proxy_name=N'Proxy_Powershell'
@@ -243,7 +243,7 @@ EXEC @ReturnCode = msdb.dbo.sp_add_jobstep @job_id=@jobId, @step_name=N'Microsof
 		@retry_interval=0, 
 		@os_run_priority=0, @subsystem=N'PowerShell', 
 		@command=N'SL "$(PSPath)"
-.\EPM_EnterpriseEvaluation_3.0.1.ps1 -ConfigurationGroup "" -PolicyCategoryFilter "Microsoft Best Practices: Windows Log File" -EvalMode "Check"', 
+.\EPM_EnterpriseEvaluation_4.ps1 -ConfigurationGroup "" -PolicyCategoryFilter "Microsoft Best Practices: Windows Log File" -EvalMode "Check"', 
 		@database_name=N'master', 
 		@flags=0, 
 		@proxy_name=N'Proxy_Powershell'
@@ -310,7 +310,7 @@ EXEC @ReturnCode = msdb.dbo.sp_add_jobstep @job_id=@jobId, @step_name=N'Microsof
 		@retry_interval=0, 
 		@os_run_priority=0, @subsystem=N'PowerShell', 
 		@command=N'SL "$(PSPath)"
-.\EPM_EnterpriseEvaluation_3.0.1.ps1 -ConfigurationGroup "" -PolicyCategoryFilter "Microsoft Best Practices: Database Configurations" -EvalMode "Check"', 
+.\EPM_EnterpriseEvaluation_4.ps1 -ConfigurationGroup "" -PolicyCategoryFilter "Microsoft Best Practices: Database Configurations" -EvalMode "Check"', 
 		@database_name=N'master', 
 		@flags=0, 
 		@proxy_name=N'Proxy_Powershell'
@@ -377,7 +377,7 @@ EXEC @ReturnCode = msdb.dbo.sp_add_jobstep @job_id=@jobId, @step_name=N'Microsof
 		@retry_interval=0, 
 		@os_run_priority=0, @subsystem=N'PowerShell', 
 		@command=N'SL "$(PSPath)"
-.\EPM_EnterpriseEvaluation_3.0.1.ps1 -ConfigurationGroup "" -PolicyCategoryFilter "Microsoft Best Practices: Database Design" -EvalMode "Check"', 
+.\EPM_EnterpriseEvaluation_4.ps1 -ConfigurationGroup "" -PolicyCategoryFilter "Microsoft Best Practices: Database Design" -EvalMode "Check"', 
 		@database_name=N'master', 
 		@flags=0, 
 		@proxy_name=N'Proxy_Powershell'
@@ -443,7 +443,7 @@ EXEC @ReturnCode = msdb.dbo.sp_add_jobstep @job_id=@jobId, @step_name=N'Microsof
 		@retry_interval=0, 
 		@os_run_priority=0, @subsystem=N'PowerShell', 
 		@command=N'SL "$(PSPath)"
-.\EPM_EnterpriseEvaluation_3.0.1.ps1 -ConfigurationGroup "" -PolicyCategoryFilter "Microsoft Best Practices: Maintenance" -EvalMode "Check"', 
+.\EPM_EnterpriseEvaluation_4.ps1 -ConfigurationGroup "" -PolicyCategoryFilter "Microsoft Best Practices: Maintenance" -EvalMode "Check"', 
 		@database_name=N'master', 
 		@flags=0, 
 		@proxy_name=N'Proxy_Powershell'
@@ -509,7 +509,7 @@ EXEC @ReturnCode = msdb.dbo.sp_add_jobstep @job_id=@jobId, @step_name=N'Microsof
 		@retry_interval=0, 
 		@os_run_priority=0, @subsystem=N'PowerShell', 
 		@command=N'SL "$(PSPath)"
-.\EPM_EnterpriseEvaluation_3.0.1.ps1 -ConfigurationGroup "" -PolicyCategoryFilter "Microsoft Best Practices: Security" -EvalMode "Check"', 
+.\EPM_EnterpriseEvaluation_4.ps1 -ConfigurationGroup "" -PolicyCategoryFilter "Microsoft Best Practices: Security" -EvalMode "Check"', 
 		@database_name=N'master', 
 		@flags=0, 
 		@proxy_name=N'Proxy_Powershell'
@@ -575,7 +575,7 @@ EXEC @ReturnCode = msdb.dbo.sp_add_jobstep @job_id=@jobId, @step_name=N'Microsof
 		@retry_interval=0, 
 		@os_run_priority=0, @subsystem=N'PowerShell', 
 		@command=N'SL "$(PSPath)"
-.\EPM_EnterpriseEvaluation_3.0.1.ps1 -ConfigurationGroup "" -PolicyCategoryFilter "Microsoft Off by Default: Surface Area Configuration" -EvalMode "Check"', 
+.\EPM_EnterpriseEvaluation_4.ps1 -ConfigurationGroup "" -PolicyCategoryFilter "Microsoft Off by Default: Surface Area Configuration" -EvalMode "Check"', 
 		@database_name=N'master', 
 		@flags=0, 
 		@proxy_name=N'Proxy_Powershell'
@@ -641,7 +641,7 @@ EXEC @ReturnCode = msdb.dbo.sp_add_jobstep @job_id=@jobId, @step_name=N'Microsof
 		@retry_interval=0, 
 		@os_run_priority=0, @subsystem=N'PowerShell', 
 		@command=N'SL "$(PSPath)"
-.\EPM_EnterpriseEvaluation_3.0.1.ps1 -ConfigurationGroup "" -PolicyCategoryFilter "Microsoft Best Practices: Version Audit" -EvalMode "Check"', 
+.\EPM_EnterpriseEvaluation_4.ps1 -ConfigurationGroup "" -PolicyCategoryFilter "Microsoft Best Practices: Version Audit" -EvalMode "Check"', 
 		@database_name=N'master', 
 		@flags=0, 
 		@proxy_name=N'Proxy_Powershell'
