@@ -33,14 +33,14 @@ EXEC msdb.dbo.sp_syspolicy_update_policy @name='SQL Server Max Worker Threads fo
 EXEC msdb.dbo.sp_syspolicy_update_policy @name='SQL Server Max Worker Threads for 64-bit SQL Server 2000', @policy_category=N'Microsoft Best Practices: Server Configuration'
 GO
 
--- Update existing condition names
+-- Update existing condition name to match other similar conditions. All current policies using the below condition will update automatically.
 EXEC msdb.dbo.sp_syspolicy_rename_condition @name = N'SQL Server 2005 or a Later Version', @new_name = N'SQL Server Version 2005 or a Later Version';
 GO
 
 -- Recommended CU or Hotfix
 -- Note that condition has to be updated with proper build numbers for the policy to be relevant.
 Declare @condition_id int
-EXEC msdb.dbo.sp_syspolicy_add_condition @name=N'Is Recommended Build', @description=N'Checks for the latest recommended CU or Hotfix (minor build number) on all SQL Server instances.', @facet=N'Server', @expression=N'<Operator>
+EXEC msdb.dbo.sp_syspolicy_add_condition @name=N'Is Recommended Build', @description=N'Checks for the latest recommended CU or Hotfix (minor build number) on all SQL Server instances. Use article http://support.microsoft.com/kb/957826 to manually update minor build numbers with the latest CU for the specific versions and major builds.', @facet=N'Server', @expression=N'<Operator>
   <TypeClass>Bool</TypeClass>
   <OpType>EQ</OpType>
   <Count>2</Count>
@@ -57,7 +57,7 @@ EXEC msdb.dbo.sp_syspolicy_add_condition @name=N'Is Recommended Build', @descrip
     <Constant>
       <TypeClass>String</TypeClass>
       <ObjType>System.String</ObjType>
-      <Value>SELECT CASE WHEN (CONVERT(int, (@@microsoftversion / 0x1000000) &amp; 0xff) = 8 AND CONVERT(int, @@microsoftversion &amp; 0xffff) &gt;= 2273) OR (CONVERT(int, (@@microsoftversion / 0x1000000) &amp; 0xff) = 9 AND CONVERT(int, @@microsoftversion &amp; 0xffff) &gt;= 5324) OR (CONVERT(int, (@@microsoftversion / 0x1000000) &amp; 0xff) = 10 AND CONVERT(int, (@@microsoftversion / 0x10000) &amp; 0xff) = 0 AND CONVERT(int, @@microsoftversion &amp; 0xffff) &gt;= 5850) OR (CONVERT(int, (@@microsoftversion / 0x1000000) &amp; 0xff) = 10 AND CONVERT(int, (@@microsoftversion / 0x10000) &amp; 0xff) = 50 AND CONVERT(int, @@microsoftversion &amp; 0xffff) &gt;= 4302) OR (CONVERT(int, (@@microsoftversion / 0x1000000) &amp; 0xff) = 11 AND CONVERT(int, @@microsoftversion &amp; 0xffff) &gt;= 5522) OR (CONVERT(int, (@@microsoftversion / 0x1000000) &amp; 0xff) = 12 AND CONVERT(int, @@microsoftversion &amp; 0xffff) &gt;= 2370) THEN 1 ELSE 0 END AS [IsRecommendedBuild]</Value>
+      <Value>SELECT CASE WHEN (CONVERT(int, (@@microsoftversion / 0x1000000) &amp; 0xff) = 8 AND CONVERT(int, @@microsoftversion &amp; 0xffff) &gt;= 2273) OR (CONVERT(int, (@@microsoftversion / 0x1000000) &amp; 0xff) = 9 AND CONVERT(int, @@microsoftversion &amp; 0xffff) &gt;= 5324) OR (CONVERT(int, (@@microsoftversion / 0x1000000) &amp; 0xff) = 10 AND CONVERT(int, (@@microsoftversion / 0x10000) &amp; 0xff) = 0 AND CONVERT(int, @@microsoftversion &amp; 0xffff) &gt;= 5861) OR (CONVERT(int, (@@microsoftversion / 0x1000000) &amp; 0xff) = 10 AND CONVERT(int, (@@microsoftversion / 0x10000) &amp; 0xff) = 50 AND CONVERT(int, @@microsoftversion &amp; 0xffff) &gt;= 4319) OR (CONVERT(int, (@@microsoftversion / 0x1000000) &amp; 0xff) = 11 AND CONVERT(int, @@microsoftversion &amp; 0xffff) &gt;= 5548) OR (CONVERT(int, (@@microsoftversion / 0x1000000) &amp; 0xff) = 12 AND CONVERT(int, @@microsoftversion &amp; 0xffff) &gt;= 2402) THEN 1 ELSE 0 END AS [IsRecommendedBuild]</Value>
     </Constant>
   </Function>
   <Constant>
@@ -386,72 +386,36 @@ EXEC msdb.dbo.sp_syspolicy_add_condition @name=N'Is Full RM and Log Backup older
   <Count>2</Count>
   <Operator>
     <TypeClass>Bool</TypeClass>
-    <OpType>AND</OpType>
+    <OpType>EQ</OpType>
     <Count>2</Count>
-    <Operator>
-      <TypeClass>Bool</TypeClass>
-      <OpType>EQ</OpType>
+    <Attribute>
+      <TypeClass>Numeric</TypeClass>
+      <Name>RecoveryModel</Name>
+    </Attribute>
+    <Function>
+      <TypeClass>Numeric</TypeClass>
+      <FunctionType>Enum</FunctionType>
+      <ReturnType>Numeric</ReturnType>
       <Count>2</Count>
-      <Attribute>
-        <TypeClass>Numeric</TypeClass>
-        <Name>RecoveryModel</Name>
-      </Attribute>
-      <Function>
-        <TypeClass>Numeric</TypeClass>
-        <FunctionType>Enum</FunctionType>
-        <ReturnType>Numeric</ReturnType>
-        <Count>2</Count>
-        <Constant>
-          <TypeClass>String</TypeClass>
-          <ObjType>System.String</ObjType>
-          <Value>Microsoft.SqlServer.Management.Smo.RecoveryModel</Value>
-        </Constant>
-        <Constant>
-          <TypeClass>String</TypeClass>
-          <ObjType>System.String</ObjType>
-          <Value>Full</Value>
-        </Constant>
-      </Function>
-    </Operator>
-    <Operator>
-      <TypeClass>Bool</TypeClass>
-      <OpType>GE</OpType>
-      <Count>2</Count>
-      <Attribute>
-        <TypeClass>DateTime</TypeClass>
-        <Name>LastLogBackupDate</Name>
-      </Attribute>
-      <Function>
-        <TypeClass>DateTime</TypeClass>
-        <FunctionType>DateAdd</FunctionType>
-        <ReturnType>DateTime</ReturnType>
-        <Count>3</Count>
-        <Constant>
-          <TypeClass>String</TypeClass>
-          <ObjType>System.String</ObjType>
-          <Value>hour</Value>
-        </Constant>
-        <Constant>
-          <TypeClass>Numeric</TypeClass>
-          <ObjType>System.Double</ObjType>
-          <Value>-24</Value>
-        </Constant>
-        <Function>
-          <TypeClass>DateTime</TypeClass>
-          <FunctionType>GetDate</FunctionType>
-          <ReturnType>DateTime</ReturnType>
-          <Count>0</Count>
-        </Function>
-      </Function>
-    </Operator>
+      <Constant>
+        <TypeClass>String</TypeClass>
+        <ObjType>System.String</ObjType>
+        <Value>Microsoft.SqlServer.Management.Smo.RecoveryModel</Value>
+      </Constant>
+      <Constant>
+        <TypeClass>String</TypeClass>
+        <ObjType>System.String</ObjType>
+        <Value>Full</Value>
+      </Constant>
+    </Function>
   </Operator>
   <Operator>
     <TypeClass>Bool</TypeClass>
-    <OpType>LE</OpType>
+    <OpType>GE</OpType>
     <Count>2</Count>
     <Attribute>
       <TypeClass>DateTime</TypeClass>
-      <Name>LastBackupDate</Name>
+      <Name>LastLogBackupDate</Name>
     </Attribute>
     <Function>
       <TypeClass>DateTime</TypeClass>
@@ -461,12 +425,12 @@ EXEC msdb.dbo.sp_syspolicy_add_condition @name=N'Is Full RM and Log Backup older
       <Constant>
         <TypeClass>String</TypeClass>
         <ObjType>System.String</ObjType>
-        <Value>day</Value>
+        <Value>hour</Value>
       </Constant>
       <Constant>
         <TypeClass>Numeric</TypeClass>
         <ObjType>System.Double</ObjType>
-        <Value>-1</Value>
+        <Value>-24</Value>
       </Constant>
       <Function>
         <TypeClass>DateTime</TypeClass>
@@ -477,7 +441,7 @@ EXEC msdb.dbo.sp_syspolicy_add_condition @name=N'Is Full RM and Log Backup older
     </Function>
   </Operator>
 </Operator>', @is_name_condition=0, @obj_name=N'', @condition_id=@condition_id OUTPUT
-Select @condition_id
+SELECT @condition_id
 GO
 
 Declare @object_set_id int
@@ -533,7 +497,7 @@ EXEC msdb.dbo.sp_syspolicy_add_condition @name=N'Is Full RM and no Backups on Re
     </Operator>
     <Operator>
       <TypeClass>Bool</TypeClass>
-      <OpType>EQ</OpType>
+      <OpType>GT</OpType>
       <Count>2</Count>
       <Attribute>
         <TypeClass>DateTime</TypeClass>
@@ -1387,7 +1351,7 @@ EXEC msdb.dbo.sp_syspolicy_add_condition @name=N'TempDB Number of Files is Optim
     <Constant>
       <TypeClass>String</TypeClass>
       <ObjType>System.String</ObjType>
-      <Value>DECLARE @tdb_files int, @online_count int, SELECT @tdb_files = COUNT(physical_name) FROM sys.master_files (NOLOCK) WHERE database_id = 2 AND [type] = 0; SELECT @online_count = COUNT(cpu_id) FROM sys.dm_os_schedulers WHERE is_online = 1 AND scheduler_id &lt; 255 AND parent_node_id &lt; 64; SELECT CASE WHEN (@tdb_files &gt;= 4 AND @tdb_files &lt;= 8 AND @tdb_files % 4 = 0) OR (@tdb_files &gt;= (@online_count / 2) AND @tdb_files &gt;= 8 AND @tdb_files % 4 = 0) THEN 0 ELSE 1 END</Value>
+      <Value>DECLARE @tdb_files int, @online_count int SELECT @tdb_files = COUNT(physical_name) FROM sys.master_files (NOLOCK) WHERE database_id = 2 AND [type] = 0; SELECT @online_count = COUNT(cpu_id) FROM sys.dm_os_schedulers WHERE is_online = 1 AND scheduler_id &lt; 255 AND parent_node_id &lt; 64; SELECT CASE WHEN (@tdb_files &gt;= 4 AND @tdb_files &lt;= 8 AND @tdb_files % 4 = 0) OR (@tdb_files &gt;= (@online_count / 2) AND @tdb_files &gt;= 8 AND @tdb_files % 4 = 0) THEN 0 ELSE 1 END</Value>
     </Constant>
   </Function>
   <Constant>

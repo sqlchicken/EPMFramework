@@ -1,4 +1,9 @@
 -- Correct imported policies
+
+-- Update existing condition name to match other similar conditions. All current policies using the below condition will update automatically.
+EXEC msdb.dbo.sp_syspolicy_rename_condition @name = N'SQL Server 2005 or a Later Version', @new_name = N'SQL Server Version 2005 or a Later Version';
+GO
+
 /*
 Notes: 
 Remove from "Surface Area Configuration for Database Engine 2005 and 2000 Features" condition all 2005 only features. 
@@ -139,7 +144,7 @@ EXEC msdb.dbo.sp_syspolicy_update_policy @name='SQL Server Affinity Mask', @desc
 Confirms whether the setting affinity mask of server is set to zero.'
 GO
 
-EXEC msdb.dbo.sp_syspolicy_update_policy @name='Last Successful Backup Date', @description=N' Checks whether a database has recent backups. Scheduling regular backups is important for protecting your databases against data loss from a variety of failures.
+EXEC msdb.dbo.sp_syspolicy_update_policy @name='Last Successful Backup Date', @description=N'Checks whether a database has recent backups. Scheduling regular backups is important for protecting your databases against data loss from a variety of failures.
 The appropriate frequency for backing up data depends on the recovery model of the database, on business requirements regarding potential data loss, and on how frequently the database is updated. In a frequently updated database, the amount of work-loss exposure increases relatively quickly between backups.
 The best practice is to perform backups frequently enough to protect databases against data loss. The simple recovery model and full recovery model both require data backups. The full recovery model also requires log backups, which should be taken more often than data backups. For either recovery model, you can supplement your full backups with differential backups to efficiently reduce the risk of data loss. For a database that uses the full recovery model, Microsoft recommends that you take frequent log backups. For a production database that contains critical data, log backups would typically be taken every one to fifteen minutes. Note: The recommended method for scheduling backups is a database maintenance plan.                    '
 GO
@@ -168,7 +173,7 @@ http://support.microsoft.com/kb/311081
 http://support.microsoft.com/kb/885688'
 GO
 
-EXEC msdb.dbo.sp_syspolicy_update_policy @name='Windows Event Log I/O Error During Hard Page Fault Error', @description=N'DetectsI/O Error during hard page fault in System Log.
+EXEC msdb.dbo.sp_syspolicy_update_policy @name='Windows Event Log I/O Error During Hard Page Fault Error', @description=N'Detects I/O Error during hard page fault in System Log.
 http://support.microsoft.com/kb/304415 
 http://support.microsoft.com/kb/305547'
 GO
